@@ -1,0 +1,59 @@
+package com.example.onlinebanking.service;
+
+import com.example.onlinebanking.model.User;
+import com.example.onlinebanking.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+
+@Service
+public class UserService {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+
+    public User createUser(User user) {
+        // Check if email or phone is already taken
+        if (userRepository.existsByEmail(user.getEmail())) {
+            throw new IllegalArgumentException("Email is already taken");
+        }
+        if (userRepository.existsByPhone(user.getPhone())) {
+            throw new IllegalArgumentException("Phone number is already taken");
+        }
+        // Generate unique 9-digit customer ID
+        String customerId = generateCustomerId();
+        while (userRepository.existsByCustomerId(customerId)) {
+            customerId = generateCustomerId();
+        }
+        user.setCustomerId(customerId);
+
+        // Encrypt the password before saving
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        
+        return userRepository.save(user);
+    }
+
+    private String generateCustomerId() {
+        Random random = new Random();
+        return String.format("%09d", random.nextInt(1_000_000_000));
+    }
+
+    public Optional<User> getUserById(Long id) {
+        return userRepository.findById(id);
+    }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    public void deleteUser(Long id) {
+        userRepository.deleteById(id);
+    }
+}

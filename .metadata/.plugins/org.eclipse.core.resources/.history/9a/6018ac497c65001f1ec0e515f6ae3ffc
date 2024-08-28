@@ -1,0 +1,5 @@
+package com.example.onlinebanking.model;
+
+public class PasswordResetToken {
+
+}
